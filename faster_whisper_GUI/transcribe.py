@@ -223,6 +223,7 @@ class OutputWorker(QThread):
 
 class TranscribeWorker(QThread):
     signal_process_over = Signal(list)
+    signal_progress = Signal(dict)   # {"file","index","total","percent"}
 
     def __init__(self
                 ,parent=None
@@ -257,6 +258,17 @@ class TranscribeWorker(QThread):
         #     return (None, None)
 
         print("开始处理音频...")
+
+        # ctranslate2 4.9.x 的 align()（词级时间戳走这里）遇到空窗口会整数除零，
+        # 在 CUDA 上直接让进程消失（0xC0000005），不抛 Python 异常。
+        # 已知问题见 OpenNMT/CTranslate2 PR #2065。这里强制关掉，需要词级
+        # 时间戳请用「词级对齐」功能的 whisperX，那条路径不经过 align()。
+        _wt = self.parameters["word_timestamps"]
+        if _wt and "cuda" in str(getattr(self.model, "device", "cuda")).lower():
+            print("[提示] CUDA 下词级时间戳会导致进程崩溃，已自动关闭。")
+            print("       需要词级时间戳请改用「词级对齐」（whisperX）。")
+            _wt = False
+
         segments, info = self.model.transcribe(
                                                 audio=file,
                                                 language=self.parameters["language"],
@@ -280,7 +292,7 @@ class TranscribeWorker(QThread):
                                                 suppress_tokens=self.parameters["suppress_tokens"],
                                                 without_timestamps=self.parameters["without_timestamps"],
                                                 max_initial_timestamp=self.parameters["max_initial_timestamp"],
-                                                word_timestamps=self.parameters["word_timestamps"],
+                                                word_timestamps=_wt,
                                                 prepend_punctuations=self.parameters["prepend_punctuations"],
                                                 append_punctuations=self.parameters["append_punctuations"],
                                                 multilingual = self.parameters["multilingual"],
@@ -307,6 +319,8 @@ class TranscribeWorker(QThread):
         # 遍历生成器，并获取转写内容
         print(f"Transcription for {file.split('/')[-1]}")
 
+        _dur = float(getattr(info, "duration", 0) or 0)
+        _last_pct = -1
         for segment in segments:
             # 退出进程标识
             # print(self.is_running)
@@ -318,6 +332,13 @@ class TranscribeWorker(QThread):
                     f'  [{str(round(segment.start, 5))}s --> {str(round(segment.end, 5))}s] {segment.text.lstrip()}'
                 )
             segmentsTranscribe.append(segment_Transcribe(segment))#.start, segment.end, segment.text))
+
+            # 按已处理到的音频位置上报进度
+            if _dur > 0:
+                _pct = min(99, int(segment.end / _dur * 100))
+                if _pct >= _last_pct + 2:
+                    _last_pct = _pct
+                    self.signal_progress.emit({"file": file, "percent": _pct})
 
         # if not self.is_running:
         #     self.signal_process_over.emit()

@@ -39,6 +39,7 @@ from qframelesswindow import (
                                 , StandardTitleBar
                             )
 
+from .taskProgress import TaskProgressBar
 from .config import (Language_dict
                     , Preciese_list
                     , Model_names
@@ -266,6 +267,10 @@ class UIMainWin(FramelessMainWindow):
 
         self.mainHBoxLayout.addWidget(self.pivot)
         self.mainHBoxLayout.addWidget(self.stackedWidget)
+
+        # 底部任务进度条（默认隐藏，有任务时出现）
+        self.taskProgressBar = TaskProgressBar(self)
+        self.vBoxLayout.addWidget(self.taskProgressBar)
         
         self.pages = []
         

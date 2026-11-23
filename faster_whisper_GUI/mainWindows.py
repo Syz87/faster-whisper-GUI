@@ -439,6 +439,7 @@ class MainWindows(UIMainWin):
                                                     )
             
             self.transcribe_thread.signal_process_over.connect(self.transcribeOver)
+            self.transcribe_thread.signal_progress.connect(self.transcribeProgress)
 
             # 修改按钮 UI
             self.page_process.button_process.setText(self.__tr("取消"))
@@ -622,6 +623,14 @@ class MainWindows(UIMainWin):
                                 
                                 word = Word(word.start,word.end,new_word,word.probability)
                                 # word.word = new_word
+
+    def transcribeProgress(self, data:dict):
+        """转写过程中的进度回调。"""
+        f = data.get("file", "")
+        name = os.path.basename(f) if f else ""
+        pct = data.get("percent")
+        label = f"{name} {self.__tr('转写中')}".strip()
+        self.setStateTool(text=label, status=False, progress=pct)
 
     def transcribeOver(self, segments_path_info:list):
         # self.button_process.clicked.disconnect(self.cancelTrancribe)
@@ -1340,10 +1349,13 @@ class MainWindows(UIMainWin):
             parts.append(f"[{idx}/{total}]")
         parts.append(content)
         pct = status.get("progress")
-        if pct is not None:
-            parts.append(f"{pct}%")
 
-        self.setStateTool(text=" ".join(parts), status=status["status"])
+        # 百分比交给底部进度条显示，文字里不再重复
+        self.setStateTool(
+            text=" ".join(parts),
+            status=status["status"],
+            progress=pct,
+        )
 
 
     def demucs_process_over(self, status:bool):
