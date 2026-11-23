@@ -214,3 +214,6 @@ fasterWhisperGUIConfig.local.json
 
 # 本地依赖备份
 requirements_backup*.txt
+
+# 依赖快照
+requirements_actual.txt
