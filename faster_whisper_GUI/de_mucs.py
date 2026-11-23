@@ -227,10 +227,7 @@ class DemucsWorker(QThread):
 
         final = torch.zeros(batch, len(model.sources), channels, length, device=device)
 
-        # 进度：按分块数量估算，每变化 2% 上报一次，避免信号刷屏
-        _step = max(1, int(chunk_len - overlap_frames))
-        _total_chunks = max(1, int(np.ceil((length - overlap_frames) / _step)))
-        _chunk_idx = 0
+        # 进度：按已处理位置占总长度的比例，每变化 2% 上报一次，避免信号刷屏
         _last_pct = -1
 
         while start < length - overlap_frames:
@@ -256,9 +253,8 @@ class DemucsWorker(QThread):
             if end >= length:
                 fade.fade_out_len = 0
 
-            # 上报分块进度
-            _chunk_idx += 1
-            _pct = min(99, int(_chunk_idx / _total_chunks * 100))
+            # 上报分块进度（用实际处理位置算，比按块数估算更准）
+            _pct = min(99, int(start / length * 100))
             if _pct >= _last_pct + 2:
                 _last_pct = _pct
                 self.file_process_status.emit({
