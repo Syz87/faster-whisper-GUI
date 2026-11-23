@@ -1329,8 +1329,21 @@ class MainWindows(UIMainWin):
             _, fileName = os.path.split(status["file"])
         else:
             fileName = ""
-        
-        self.setStateTool(text=f"{fileName} {content}", status=status["status"])
+
+        # 拼上「第几个文件」和「当前百分比」，让长音频分离时能看到进展
+        parts = []
+        if fileName:
+            parts.append(fileName)
+        idx = status.get("file_index")
+        total = status.get("file_total")
+        if idx and total:
+            parts.append(f"[{idx}/{total}]")
+        parts.append(content)
+        pct = status.get("progress")
+        if pct is not None:
+            parts.append(f"{pct}%")
+
+        self.setStateTool(text=" ".join(parts), status=status["status"])
 
 
     def demucs_process_over(self, status:bool):

@@ -73,7 +73,8 @@ class DemucsWorker(QThread):
         sources = None
         audio = None
         
-        for audio in self.audio:
+        _file_total = len(self.audio)
+        for _file_idx, audio in enumerate(self.audio, 1):
             
             if not self.is_running:
                 del samples
@@ -84,7 +85,9 @@ class DemucsWorker(QThread):
                 print("exit")
                 return
             
-            self.file_process_status.emit({"file":audio, "status":False, "task": "reasmple audio"})
+            self._current_audio = audio
+            self.file_process_status.emit({"file":audio, "status":False, "task": "reasmple audio",
+                                           "file_index": _file_idx, "file_total": _file_total})
             print(f"current task: {audio}")
             print("reasmple audio...")
 
@@ -107,7 +110,8 @@ class DemucsWorker(QThread):
                 return
             
             print("separate sources...")
-            self.file_process_status.emit({"file":audio, "status":False, "task": "separate sources"})
+            self.file_process_status.emit({"file":audio, "status":False, "task": "separate sources",
+                                           "file_index": _file_idx, "file_total": _file_total, "progress": 0})
 
             try:
                 sources = self.separate_sources(
@@ -132,7 +136,8 @@ class DemucsWorker(QThread):
                     torch.cuda.empty_cache()
                 return
             
-            self.file_process_status.emit({"file":audio, "status":False, "task": "save files"})
+            self.file_process_status.emit({"file":audio, "status":False, "task": "save files",
+                                           "file_index": _file_idx, "file_total": _file_total})
             print("save files...")
 
             try:
@@ -222,6 +227,12 @@ class DemucsWorker(QThread):
 
         final = torch.zeros(batch, len(model.sources), channels, length, device=device)
 
+        # 进度：按分块数量估算，每变化 2% 上报一次，避免信号刷屏
+        _step = max(1, int(chunk_len - overlap_frames))
+        _total_chunks = max(1, int(np.ceil((length - overlap_frames) / _step)))
+        _chunk_idx = 0
+        _last_pct = -1
+
         while start < length - overlap_frames:
             if not self.is_running:
                 return None
@@ -244,6 +255,18 @@ class DemucsWorker(QThread):
             end += chunk_len
             if end >= length:
                 fade.fade_out_len = 0
+
+            # 上报分块进度
+            _chunk_idx += 1
+            _pct = min(99, int(_chunk_idx / _total_chunks * 100))
+            if _pct >= _last_pct + 2:
+                _last_pct = _pct
+                self.file_process_status.emit({
+                    "file": getattr(self, "_current_audio", ""),
+                    "status": False,
+                    "task": "separate sources",
+                    "progress": _pct,
+                })
 
             del out
             del chunk

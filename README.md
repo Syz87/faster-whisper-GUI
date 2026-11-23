@@ -123,6 +123,29 @@ python -m venv .venv
 
 > 日语没有空格分词，按词算 WER 会虚高到 55%~60%，看 CER 才有意义。
 
+### Demucs 人声分离权重（可选）
+
+点「声乐分离」时，程序会找 `cache/hdemucs_high_trained.pt`。
+文件不在就去 `download.pytorch.org` 拉 **319 MB**，国内网络偶尔返回
+`HTTP Error 403: Forbidden`，表现为「load model error」。
+
+提前下好放进去就不会触发联网：
+
+```bash
+下载模型.bat → 选 4
+```
+
+或者手动：
+
+```
+https://download.pytorch.org/torchaudio/models/hdemucs_high_trained.pt
+→ 存成 cache/hdemucs_high_trained.pt
+```
+
+注意别拿 `dl.fbaipublicfiles.com` 上那个 80 MB 的 `955717e8-*.th` 顶替，
+那是 demucs 官方包的完整模型对象，torchaudio 读不了（会报
+`Unsupported global: GLOBAL demucs.htdemucs.HTDemucs`）。
+
 ### 日译中翻译模型（可选）
 
 需要 [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) 的 `llama-server.exe`，

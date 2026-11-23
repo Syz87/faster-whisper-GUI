@@ -1,14 +1,64 @@
-pyside6-fluent-widgets>=1.3.2
-faster-whisper==0.10.0
-nuitka<=1.8.6
-pyAV
-ffmpeg-python
-pyAudio
-nltk
-CTranslate2>=3.21.0
-joblib==1.2.0
-pyside6 > 6.5.0
-torch==1.13.1+cu117
-torchaudio==0.13.1+cu117
-webvtt
+# faster-whisper-GUI 依赖清单
+#
+# 安装核心依赖：
+#   .venv\Scripts\python -m pip install -r requirements.txt
+#
+# Windows 上 pip 默认装 CPU 版 PyTorch。要用 GPU 跑词级对齐 / 人声分离，
+# 需要单独装 CUDA 版，见文末「可选组件」。
 
+# ---------- 核心：转写与界面 ----------
+faster-whisper==1.2.1
+ctranslate2>=4.7.2
+PySide6>6.5.0
+PySide6-Fluent-Widgets>=1.3.2
+
+# 音频解码（不依赖 ffmpeg 命令行）
+av
+soundfile
+
+# VAD 语音活动检测
+onnxruntime
+
+# 数值与工具
+numpy<2
+
+# 麦克风输入 / 分词 / 字幕格式 / 并行
+pyaudio
+nltk
+webvtt-py
+joblib
+
+# 繁简转换 / 网络请求 / 音频处理
+opencc-python-reimplemented
+requests
+ffmpeg-python
+
+# 语音合成与模型下载
+edge-tts
+huggingface-hub
+tokenizers
+
+# ---------- CUDA 12 运行库（NVIDIA 显卡必需）----------
+# 不用装 CUDA Toolkit，pip 装这几个就有 cuBLAS / cuDNN 9
+nvidia-cublas-cu12
+nvidia-cudnn-cu12
+nvidia-cuda-nvrtc-cu12
+
+# ---------- 可选组件 ----------
+# 下面这些不装也能正常转写，装了才有额外功能：
+#
+#   whisperX 词级对齐 + 说话人分离
+#   Demucs 人声分离（需要 torchaudio 的 HDEMUCS_HIGH_MUSDB_PLUS）
+#
+# CPU 版（体积小，能用但慢）：
+#   torch==2.11.0
+#   torchaudio==2.11.0
+#
+# CUDA 版（显卡加速，约 2.8 GB 下载）：
+#   .venv\Scripts\python -m pip install torch==2.11.0+cu128 torchaudio==2.11.0+cu128 ^
+#       --index-url https://download.pytorch.org/whl/cu128
+#
+# 其余依赖：
+#   transformers
+#   pandas
+#   pyannote.audio

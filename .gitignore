@@ -211,3 +211,6 @@ fasterWhisperGUIConfig.local.json
 # 打包产物
 *.7z
 *.zip
+
+# 本地依赖备份
+requirements_backup*.txt
