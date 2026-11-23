@@ -1,0 +1,30 @@
+这个目录用来放模型，仓库里不含任何模型文件。
+
+目录约定
+────────
+models/whisper/<模型名>/     识别模型，文件夹里必须有 model.bin
+models/translate/            翻译模型（GGUF），放 *.gguf 即可
+models/hf-cache/             在线下载的缓存
+
+获取模型
+────────
+最省事：双击软件目录下的 下载模型.bat，按菜单选一个。
+
+手动下载（浏览器打不开 HuggingFace 就用镜像）：
+  kotoba-whisper-v2.2   https://hf-mirror.com/RoachLin/kotoba-whisper-v2.2-faster
+  large-v3              https://hf-mirror.com/Systran/faster-whisper-large-v3
+  large-v3-turbo        https://hf-mirror.com/deepdml/faster-whisper-large-v3-turbo-ct2
+
+进入页面点「Files and versions」下载全部文件，放进对应文件夹。
+核心文件是 model.bin（2~3 GB）+ config.json + tokenizer.json + vocabulary.json。
+
+选哪个
+──────
+日语视频（日剧/动画/综艺/vlog）  → kotoba-whisper-v2.2
+朗读、播客、课程录音、中文、英文 → large-v3
+想快、质量能接受略降            → large-v3-turbo（1.6 GB）
+
+为什么这么选：日语要看 CER（字符错误率），不是 WER。
+  kotoba     视频口语 11.6% ｜ 朗读 8.4% ｜ 口音 9.2%
+  large-v3   视频口语 15.1% ｜ 朗读 7.1% ｜ 口音 8.5%
+kotoba 只在口语视频类赢，其他两类都输给 large-v3。
