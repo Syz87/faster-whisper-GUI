@@ -1,20 +1,34 @@
 # coding:utf-8
 
-# --- 让 ctranslate2 找到 pip 安装的 CUDA 12 运行库（cuBLAS / cuDNN 9）---
+# --- 让 ctranslate2 找到 CUDA 12 运行库（cuBLAS / cuDNN 9）---
+# 源码运行：从 .venv/Lib/site-packages/nvidia/*/bin 找
+# 打包运行：从 exe 同级的 _internal/nvidia/*/bin 找
 import os as _os
+import sys as _sys
 import glob as _glob
-_base = _os.path.dirname(_os.path.abspath(__file__))
-for _d in _glob.glob(_os.path.join(_base, '..', '.venv', 'Lib', 'site-packages', 'nvidia', '*', 'bin')):
-    try:
-        _os.add_dll_directory(_d)
-        _os.environ['PATH'] = _d + _os.pathsep + _os.environ.get('PATH', '')
-    except Exception:
-        pass
+if getattr(_sys, 'frozen', False):
+    _base = _os.path.dirname(_os.path.abspath(_sys.executable))
+    _patterns = [
+        _os.path.join(_base, '_internal', 'nvidia', '*', 'bin'),
+        _os.path.join(_base, 'nvidia', '*', 'bin'),
+    ]
+else:
+    _base = _os.path.dirname(_os.path.abspath(__file__))
+    _patterns = [_os.path.join(_base, '..', '.venv', 'Lib', 'site-packages', 'nvidia', '*', 'bin')]
+
+for _pat in _patterns:
+    for _d in _glob.glob(_pat):
+        try:
+            _os.add_dll_directory(_d)
+            _os.environ['PATH'] = _d + _os.pathsep + _os.environ.get('PATH', '')
+        except Exception:
+            pass
 
 
 # from threading import Thread
 from typing import (List, Optional, TypedDict, Union)
 from PySide6.QtCore import QThread, Signal
+import numpy as np
 from faster_whisper import WhisperModel
 
 
