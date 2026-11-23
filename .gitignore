@@ -207,3 +207,7 @@ fasterWhisperGUIConfig.local.json
 # 打包与发布临时文件
 *.spec.bak
 .release_notes_*.md
+
+# 打包产物
+*.7z
+*.zip
